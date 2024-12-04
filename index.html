@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pancreatic Grading Image Classification</title>
+    <style>
+        /* Global Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #2C3E50;
+        }
+
+        p {
+            font-size: 16px;
+            color: #7F8C8D;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #333;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+
+        input[type="file"]:hover {
+            background-color: #ecf0f1;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            font-size: 16px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+            display: none; /* Hidden by default, displayed after prediction */
+        }
+
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .image-preview {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .image-preview img {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            input[type="file"] {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Pancreatic Grading Image Classification</h1>
+        <p>Upload a medical image of the pancreas grade, and the model will classify the grade.</p>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file" accept="image/*" required>
+            <button type="submit">Upload Image</button>
+        </form>
+
+        <div id="loader" class="loader"></div>
+
+        <div class="image-preview" id="imagePreview">
+            <h3>Uploaded Image:</h3>
+            <img id="uploadedImage" src="" alt="Uploaded Image">
+        </div>
+
+        <div id="result" class="result"></div>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        // Handle form submission and display results
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Show loading spinner
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('imagePreview').style.display = 'none';
+
+            var formData = new FormData();
+            var fileInput = document.getElementById('fileInput');
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide the loader
+                document.getElementById('loader').style.display = 'none';
+
+                if (data.prediction) {
+                    document.getElementById('result').innerHTML = 'Predicted Class: ' + data.prediction;
+                    document.getElementById('result').style.display = 'block';
+                } else if (data.error) {
+                    document.getElementById('error').innerHTML = 'Error: ' + data.error;
+                    document.getElementById('error').style.display = 'block';
+                }
+
+                // Show the uploaded image
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('uploadedImage').src = 'data:image/png;base64,' + data.image;
+            })
+            .catch(error => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('error').innerHTML = 'Error: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>
